@@ -54,3 +54,10 @@ RX | FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
 С параметром "-c" совпадающие значения отображаются зеленым, отличные - красным.
 
 ![Color](./color.png)
+
+
+Проверка случайным набором данных:
+
+```
+sudo ./spidev_test -D /dev/spidev1.0 -v -c -S 32 -I 1
+```
