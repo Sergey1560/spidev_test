@@ -25,6 +25,10 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+#define SET_COLOR_RED 	printf("\033[1;31m")
+#define SET_COLOR_GREEN	printf("\033[0;32m")
+#define SET_COLOR_STD	printf("\033[0m")
+
 static void pabort(const char *s)
 {
 	if (errno != 0)
@@ -45,6 +49,7 @@ static uint16_t delay;
 static int verbose;
 static int transfer_size;
 static int iterations;
+static int color;
 static int interval = 5; /* interval in seconds for showing transfer rate */
 
 static uint8_t default_tx[] = {
@@ -57,19 +62,32 @@ static uint8_t default_tx[] = {
 };
 
 static uint8_t default_rx[ARRAY_SIZE(default_tx)] = {0, };
+static uint8_t diff[ARRAY_SIZE(default_tx)] = {0, };
 static char *input_tx;
 
 static void hex_dump(const void *src, size_t length, size_t line_size,
 		     char *prefix)
 {
 	int i = 0;
+	int k = 0;
 	const unsigned char *address = src;
 	const unsigned char *line = address;
 	unsigned char c;
 
 	printf("%s | ", prefix);
 	while (length-- > 0) {
+		if(color){
+			if(diff[k]){ //tx and rx not equal
+				SET_COLOR_RED;
+			}else{ //tx and rx equal
+				SET_COLOR_GREEN;
+			}
+		}
 		printf("%02X ", *address++);
+		if(color){
+			SET_COLOR_STD;
+			k++;
+		}
 		if (!(++i % line_size) || (length == 0 && i % line_size)) {
 			if (length == 0) {
 				while (i++ % line_size)
@@ -115,6 +133,12 @@ static int unescape(char *_dst, char *_src, size_t len)
 	return ret;
 }
 
+static void compare_data(uint8_t const *tx, uint8_t const *rx, uint8_t *diff, size_t len){
+	while(len--){
+		*diff++ = (*tx++ == *rx++) ? 0 : 1;
+	}
+};
+
 static void transfer(int fd, uint8_t const *tx, uint8_t const *rx, size_t len)
 {
 	int ret;
@@ -151,6 +175,10 @@ static void transfer(int fd, uint8_t const *tx, uint8_t const *rx, size_t len)
 	if (ret < 1)
 		pabort("can't send spi message");
 
+	if(verbose && color){
+		compare_data(tx,rx,diff,len);
+	}
+	
 	if (verbose)
 		hex_dump(tx, len, 32, "TX");
 
@@ -193,7 +221,8 @@ static void print_usage(const char *prog)
 	     "  -4 --quad     quad transfer\n"
 	     "  -8 --octal    octal transfer\n"
 	     "  -S --size     transfer size\n"
-	     "  -I --iter     iterations\n");
+	     "  -I --iter     iterations\n"
+	     "  -c --color    color\n");
 	exit(1);
 }
 
@@ -221,11 +250,12 @@ static void parse_opts(int argc, char *argv[])
 			{ "octal",   0, 0, '8' },
 			{ "size",    1, 0, 'S' },
 			{ "iter",    1, 0, 'I' },
+			{ "color",   1, 0, 'c' },
 			{ NULL, 0, 0, 0 },
 		};
 		int c;
 
-		c = getopt_long(argc, argv, "D:s:d:b:i:o:lHOLC3NR248p:vS:I:",
+		c = getopt_long(argc, argv, "D:s:d:b:i:o:lHOLC3NR248pc:vS:I:",
 				lopts, NULL);
 
 		if (c == -1)
@@ -294,6 +324,9 @@ static void parse_opts(int argc, char *argv[])
 			break;
 		case 'I':
 			iterations = atoi(optarg);
+			break;
+		case 'c':
+			color = 1;
 			break;
 		default:
 			print_usage(argv[0]);
