@@ -200,7 +200,7 @@ static void transfer(int fd, uint8_t const *tx, uint8_t const *rx, size_t len)
 
 static void print_usage(const char *prog)
 {
-	printf("Usage: %s [-DsbdlHOLC3vpNR24SI]\n", prog);
+	printf("Usage: %s [-DsbdlHOLC3vpcNR24SI]\n", prog);
 	puts("  -D --device   device to use (default /dev/spidev1.1)\n"
 	     "  -s --speed    max speed (Hz)\n"
 	     "  -d --delay    delay (usec)\n"
@@ -255,7 +255,7 @@ static void parse_opts(int argc, char *argv[])
 		};
 		int c;
 
-		c = getopt_long(argc, argv, "D:s:d:b:i:o:lHOLC3NR248pc:vS:I:",
+		c = getopt_long(argc, argv, "D:s:d:b:i:o:lHOLC3NR248cp:vS:I:",
 				lopts, NULL);
 
 		if (c == -1)
